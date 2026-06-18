@@ -3,15 +3,15 @@ import Foundation
 struct Photo: Identifiable {
     let id: UUID
     let title: String
-    let category: PhotoCategory
-    let imageURL: URL
+    let category: PhotoTag
+    let imageURL: URL?
     let likes: Int
     let author: String
 
     init(
         id: UUID = UUID(),
         title: String,
-        category: PhotoCategory,
+        category: PhotoTag,
         imageURLString: String,
         likes: Int = 0,
         author: String = ""
@@ -19,12 +19,24 @@ struct Photo: Identifiable {
         self.id = id
         self.title = title
         self.category = category
-        self.imageURL = URL(string: imageURLString)!
+        // 不正なURL文字列でも強制アンラップでクラッシュさせず、nilのままAsyncImageに委ねる
+        self.imageURL = URL(string: imageURLString)
         self.likes = likes
         self.author = author
     }
 }
 
+/// 写真自体が持つカテゴリ。「すべて」は概念上存在しないため、フィルター専用の PhotoCategory とは型を分ける。
+enum PhotoTag: String, CaseIterable, Identifiable {
+    case nature = "自然"
+    case city = "都市"
+    case food = "食べ物"
+    case travel = "旅行"
+
+    var id: String { rawValue }
+}
+
+/// ギャラリーのフィルター選択用カテゴリ。「すべて」を含むのはこちらのみ。
 enum PhotoCategory: String, CaseIterable, Identifiable {
     case all = "すべて"
     case nature = "自然"
@@ -33,6 +45,10 @@ enum PhotoCategory: String, CaseIterable, Identifiable {
     case travel = "旅行"
 
     var id: String { rawValue }
+
+    func matches(_ tag: PhotoTag) -> Bool {
+        self == .all || rawValue == tag.rawValue
+    }
 }
 
 extension Photo {

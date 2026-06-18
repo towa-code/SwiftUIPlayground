@@ -6,10 +6,7 @@ class PhotoViewModel: ObservableObject {
     @Published var selectedCategory: PhotoCategory = .all
 
     var filteredPhotos: [Photo] {
-        if selectedCategory == .all {
-            return allPhotos
-        }
-        return allPhotos.filter { $0.category == selectedCategory }
+        allPhotos.filter { selectedCategory.matches($0.category) }
     }
 
     func formattedLikes(_ count: Int) -> String {

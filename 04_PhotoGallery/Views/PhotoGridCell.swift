@@ -33,15 +33,15 @@ struct PhotoGridCell: View {
                     EmptyView()
                 }
             }
-            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 150, maxHeight: 150)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
 
             // いいね数オーバーレイ
             HStack(spacing: 4) {
                 Image(systemName: "heart.fill")
-                    .font(.caption2)
+                    .font(.footnote)
                 Text(viewModel.formattedLikes(photo.likes))
-                    .font(.caption2.bold())
+                    .font(.footnote.bold())
             }
             .foregroundStyle(.white)
             .padding(6)

@@ -51,8 +51,8 @@ struct PhotoDetailView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal)
         }
         .navigationTitle(photo.title)
         .navigationBarTitleDisplayMode(.inline)
