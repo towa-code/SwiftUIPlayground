@@ -3,32 +3,46 @@
 SwiftUIを実践的に学ぶための10教材セット。
 各教材は独立して動作し、1〜3時間で完成できる規模です。
 
-## 使い方
+## 各教材の使い方
 
 1. Xcodeで **新規 SwiftUI プロジェクト** を作成
-2. 各教材の Swift ファイルをプロジェクトに追加
+2. 教材フォルダの Swift ファイルをプロジェクトに追加
 3. 各教材の `README.md` の「セットアップ」に従い起動ポイントを設定
-4. Previewで確認しながら動作を理解する
+4. **`ROADMAP.md` を開いて Step 1 から順に写経していく**
+5. 各 Step の末尾にある「▶ ここで確認」で動作を確認してから次へ進む
+
+## 各教材のファイル構成
+
+各教材フォルダには以下の2つのドキュメントがあります。
+
+| ファイル | 内容 |
+|---|---|
+| `README.md` | 学習テーマの解説・APIの使い方・発展課題 |
+| `ROADMAP.md` | **どのファイルのどの部分を、どの順で書くかの手順書** |
 
 ## 教材一覧
 
-| # | 教材 | 学習テーマ |
-|---|------|-----------|
-| 01 | [TodoApp](01_TodoApp/) | `List` / `NavigationStack` / `SwipeActions` |
-| 02 | [SettingsApp](02_SettingsApp/) | `Form` / `Toggle` / `Picker` / `AppStorage` |
-| 03 | [ProfileCard](03_ProfileCard/) | `ZStack` / `overlay` / `Sheet` |
-| 04 | [PhotoGallery](04_PhotoGallery/) | `ScrollView` / `LazyVGrid` / `AsyncImage` |
-| 05 | [TabSNS](05_TabSNS/) | `TabView` / `NavigationStack` |
-| 06 | [PostModal](06_PostModal/) | `Sheet` / `FullScreenCover` / `@Binding` |
-| 07 | [HabitTracker](07_HabitTracker/) | `ObservableObject` / `@StateObject` / `ProgressView` |
-| 08 | [ProductSearch](08_ProductSearch/) | `.searchable` / フィルタリング |
-| 09 | [WeatherDashboard](09_WeatherDashboard/) | `EnvironmentObject` / MVVM |
-| 10 | [AnimatedFavorite](10_AnimatedFavorite/) | `Animation` / `matchedGeometryEffect` |
+| # | 教材 | 学習テーマ | 推定時間 |
+|---|------|-----------|---------|
+| 01 | [TodoApp](01_TodoApp/) | `List` / `NavigationStack` / `SwipeActions` | 1〜2h |
+| 02 | [SettingsApp](02_SettingsApp/) | `Form` / `Toggle` / `Picker` / `AppStorage` | 1〜2h |
+| 03 | [ProfileCard](03_ProfileCard/) | `ZStack` / `overlay` / `Sheet` | 1〜2h |
+| 04 | [PhotoGallery](04_PhotoGallery/) | `ScrollView` / `LazyVGrid` / `AsyncImage` | 1〜2h |
+| 05 | [TabSNS](05_TabSNS/) | `TabView` / `NavigationStack` | 2〜3h |
+| 06 | [PostModal](06_PostModal/) | `Sheet` / `FullScreenCover` / `@Binding` | 1〜2h |
+| 07 | [HabitTracker](07_HabitTracker/) | `ObservableObject` / `@StateObject` / `ProgressView` | 2〜3h |
+| 08 | [ProductSearch](08_ProductSearch/) | `.searchable` / フィルタリング | 1〜2h |
+| 09 | [WeatherDashboard](09_WeatherDashboard/) | `EnvironmentObject` / MVVM | 2〜3h |
+| 10 | [AnimatedFavorite](10_AnimatedFavorite/) | `Animation` / `matchedGeometryEffect` | 2〜3h |
 
 ## 推奨学習順序
 
-初めてSwiftUIを学ぶ場合は 01 → 02 → 03 の順がおすすめ。
-各教材の `README.md` に詳細な学習ポイントと発展課題があります。
+```
+01 → 02 → 03   基礎（List / Form / ZStack）
+04 → 05         レイアウト応用（Grid / TabView）
+06 → 07         状態管理（Sheet / ObservableObject）
+08 → 09 → 10   発展（Search / EnvironmentObject / Animation）
+```
 
 ## MVVM 構成（全教材共通）
 
@@ -36,5 +50,7 @@ SwiftUIを実践的に学ぶための10教材セット。
 教材名/
 ├── Models/         # データの形（struct）
 ├── ViewModels/     # ビジネスロジック（ObservableObject）
-└── Views/          # 画面UI（SwiftUI View）
+├── Views/          # 画面UI（SwiftUI View）
+├── README.md       # テーマ解説・APIリファレンス・発展課題
+└── ROADMAP.md      # 写経の手順書（何をどの順で書くか）
 ```
