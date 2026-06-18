@@ -21,7 +21,7 @@ struct AddTodoView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
                     .foregroundStyle(
-                        viewModel.newTitle.trimmingCharacters(in: .whitespaces).isEmpty ? .secondary : .blue
+                        viewModel.newTitle.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary : Color.blue
                     )
             }
             .disabled(viewModel.newTitle.trimmingCharacters(in: .whitespaces).isEmpty)
