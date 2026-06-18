@@ -1,57 +1,48 @@
 import SwiftUI
 
 struct SettingsView: View {
-    // AppStorage: UserDefaultsと自動同期するプロパティラッパー
-    @AppStorage("app_theme") private var appTheme: String = AppTheme.system.rawValue
-    @AppStorage("font_size") private var fontSize: String = FontSize.medium.rawValue
-    @AppStorage("language") private var language: String = Language.japanese.rawValue
-    @AppStorage("notifications_enabled") private var notificationsEnabled: Bool = true
-    @AppStorage("sound_enabled") private var soundEnabled: Bool = true
-    @AppStorage("haptics_enabled") private var hapticsEnabled: Bool = true
-    @AppStorage("auto_lock") private var autoLock: Bool = false
-    @AppStorage("username") private var username: String = ""
-
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert = false
+    @State private var showExportAlert = false
 
     var body: some View {
         NavigationStack {
             Form {
                 // MARK: - アカウント
                 Section("アカウント") {
-                    HStack {
+                    HStack(spacing: 12) {
                         Image(systemName: "person.circle.fill")
                             .font(.largeTitle)
                             .foregroundStyle(.blue)
-                        VStack(alignment: .leading) {
-                            TextField("ユーザー名", text: $username)
+                        VStack(alignment: .leading, spacing: 4) {
+                            TextField("ユーザー名", text: $viewModel.username)
                                 .font(.headline)
                             Text("プロフィールを編集")
-                                .font(.caption)
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
                 }
 
                 // MARK: - 外観
                 Section("外観") {
                     // Picker: 複数の選択肢から1つを選ぶ
-                    Picker("テーマ", selection: $appTheme) {
+                    Picker("テーマ", selection: $viewModel.theme) {
                         ForEach(AppTheme.allCases) { theme in
-                            Text(theme.rawValue).tag(theme.rawValue)
+                            Text(theme.rawValue).tag(theme)
                         }
                     }
 
-                    Picker("フォントサイズ", selection: $fontSize) {
+                    Picker("フォントサイズ", selection: $viewModel.fontSize) {
                         ForEach(FontSize.allCases) { size in
-                            Text(size.rawValue).tag(size.rawValue)
+                            Text(size.rawValue).tag(size)
                         }
                     }
 
-                    Picker("言語", selection: $language) {
+                    Picker("言語", selection: $viewModel.language) {
                         ForEach(Language.allCases) { lang in
-                            Text(lang.rawValue).tag(lang.rawValue)
+                            Text(lang.rawValue).tag(lang)
                         }
                     }
                     .pickerStyle(.navigationLink)
@@ -60,17 +51,17 @@ struct SettingsView: View {
                 // MARK: - 通知
                 Section("通知") {
                     // Toggle: ON/OFFを切り替えるスイッチ
-                    Toggle("通知を受け取る", isOn: $notificationsEnabled)
+                    Toggle("通知を受け取る", isOn: $viewModel.notificationsEnabled)
 
-                    if notificationsEnabled {
-                        Toggle("サウンド", isOn: $soundEnabled)
-                        Toggle("バイブレーション", isOn: $hapticsEnabled)
+                    if viewModel.notificationsEnabled {
+                        Toggle("サウンド", isOn: $viewModel.soundEnabled)
+                        Toggle("バイブレーション", isOn: $viewModel.hapticsEnabled)
                     }
                 }
 
                 // MARK: - セキュリティ
                 Section("セキュリティ") {
-                    Toggle("自動ロック", isOn: $autoLock)
+                    Toggle("自動ロック", isOn: $viewModel.autoLock)
                     NavigationLink("パスワードを変更") {
                         PasswordPlaceholderView()
                     }
@@ -81,6 +72,9 @@ struct SettingsView: View {
                     LabeledContent("バージョン", value: "1.0.0")
                     LabeledContent("ビルド", value: "42")
                     Link("プライバシーポリシー", destination: URL(string: "https://example.com")!)
+                    Button("設定をエクスポート") {
+                        showExportAlert = true
+                    }
                 }
 
                 // MARK: - リセット
@@ -91,6 +85,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("設定")
+            .preferredColorScheme(viewModel.theme.colorScheme)
+            .dynamicTypeSize(viewModel.fontSize.dynamicTypeSize)
             .alert("設定をリセット", isPresented: $showResetAlert) {
                 Button("リセット", role: .destructive) {
                     viewModel.resetAllSettings()
@@ -99,14 +95,12 @@ struct SettingsView: View {
             } message: {
                 Text("すべての設定がデフォルトに戻ります。")
             }
+            .alert("設定のエクスポート", isPresented: $showExportAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.exportSettings())
+            }
         }
-    }
-}
-
-struct PasswordPlaceholderView: View {
-    var body: some View {
-        Text("パスワード変更画面")
-            .navigationTitle("パスワード変更")
     }
 }
 

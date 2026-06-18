@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 enum AppTheme: String, CaseIterable, Identifiable {
     case system = "システム"
@@ -6,6 +6,15 @@ enum AppTheme: String, CaseIterable, Identifiable {
     case dark = "ダーク"
 
     var id: String { rawValue }
+
+    /// .preferredColorScheme に渡す値。systemの場合はnilでOS設定に追従させる
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
 }
 
 enum FontSize: String, CaseIterable, Identifiable {
@@ -15,11 +24,12 @@ enum FontSize: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var scaleFactor: CGFloat {
+    /// .dynamicTypeSize に渡す値。SwiftUIは任意倍率指定ができないため段階的なサイズへマッピングする
+    var dynamicTypeSize: DynamicTypeSize {
         switch self {
-        case .small: return 0.85
-        case .medium: return 1.0
-        case .large: return 1.2
+        case .small: return .medium
+        case .medium: return .large
+        case .large: return .xxxLarge
         }
     }
 }
