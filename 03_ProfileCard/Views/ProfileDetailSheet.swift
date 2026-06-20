@@ -30,8 +30,15 @@ struct ProfileDetailSheet: View {
                         Image(systemName: profile.avatarSystemImage)
                             .font(.system(size: avatarDiameter * 0.8))
                             .foregroundStyle(.white)
-                            .background(Circle().fill(profile.accentColor).frame(width: avatarDiameter, height: avatarDiameter))
-                            .overlay(Circle().stroke(Color.white, lineWidth: 3))
+                            .frame(width: avatarDiameter, height: avatarDiameter)
+                            .background(
+                                Circle()
+                                    .fill(profile.accentColor)
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(.white, lineWidth: 3)
+                            )
                             .offset(y: avatarDiameter / 2)
                     }
                     .padding(.bottom, avatarDiameter / 2)
