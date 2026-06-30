@@ -70,9 +70,20 @@ struct Photo: Identifiable {
     }
 }
 ```
-▶ 理解: `imageURL` は `URL?`（Optional）。`URL(string:)!` のように強制アンラップすると不正なURL文字列でアプリ全体がクラッシュするため、nilを許容して `AsyncImage` 側の `.failure` 表示に委ねる
+▶ 理解: `imageURL` は `URL?`（Optional）。`URL(string:)!` のように強制アンラップすると不正なURL文字列でアプリ全体がクラッシュするため、nilを許容して `AsyncImage` 側に委ねる
 
-### 1-4: サンプルデータ
+### 1-4: いいね数のフォーマット（Photo の computed property）
+```swift
+extension Photo {
+    var formattedLikes: String {
+        likes >= 1000 ? String(format: "%.1fK", Double(likes) / 1000.0) : "\(likes)"
+    }
+}
+```
+▶ ここで確認: `Photo.samples[8].formattedLikes` が `"2.0K"`、`Photo.samples[0].formattedLikes` が `"234"` になること
+▶ 理解: 表示用の整形ロジックをモデルの computed property に置くことで、Viewからは `photo.formattedLikes` と書くだけになる
+
+### 1-5: サンプルデータ
 ```swift
 extension Photo {
     // Picsum Photos API を使ったサンプルデータ（実際のURLから画像取得）
@@ -116,18 +127,6 @@ class PhotoViewModel: ObservableObject {
 ▶ ここで確認: `selectedCategory = .nature` にすると自然写真だけが返ること
 ▶ 理解: `if selectedCategory == .all { ... } else { ... }` のような分岐を自前で書く代わりに、Step 1で定義した `PhotoCategory.matches(_:)` に委譲している。フィルター条件の判定ロジックをモデル側に閉じ込めることで、ViewModelはシンプルなまま保たれる
 
-### 2-2: いいね数のフォーマット関数を追加
-```swift
-    func formattedLikes(_ count: Int) -> String {
-        if count >= 1000 {
-            return String(format: "%.1fK", Double(count) / 1000.0)
-        }
-        return "\(count)"
-    }
-```
-▶ ここで確認: `formattedLikes(2041)` が `"2.0K"`、`formattedLikes(512)` が `"512"` になること
-▶ 理解: 表示用の整形ロジックはViewではなくViewModelに置く。Viewはこの結果をそのまま表示するだけにする
-
 ---
 
 ## Step 3 — AsyncImage でセルを作る
@@ -139,14 +138,11 @@ import SwiftUI
 
 struct PhotoGridCell: View {
     let photo: Photo
-    @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
-        // AsyncImage: URL から非同期で画像を読み込む
         AsyncImage(url: photo.imageURL) { image in
             image.resizable().scaledToFill()
         } placeholder: {
-            // 読み込み中のプレースホルダー
             Color.gray.opacity(0.3)
         }
         .frame(height: 150)
@@ -155,79 +151,58 @@ struct PhotoGridCell: View {
 }
 
 #Preview {
-    PhotoGridCell(photo: Photo.samples[0], viewModel: PhotoViewModel())
+    PhotoGridCell(photo: Photo.samples[0])
 }
 ```
 ▶ ここで確認: Preview で画像が表示されること（初回は時間がかかる）
-▶ 理解: `viewModel` を `@ObservedObject` で受け取っているのは、次のステップで `formattedLikes(_:)` を使うため。セル自身はStateを持たないので `@StateObject` ではなく `@ObservedObject` を使う
+▶ 理解: セルは `Photo` データだけを受け取る。状態を持たないため `@ObservedObject` は不要
 
 ### 3-2: phase ベースの分岐に書き換える
 ```swift
     AsyncImage(url: photo.imageURL) { phase in
         switch phase {
-        case .empty:
-            // 読み込み中
-            Rectangle()
-                .fill(Color(.systemGray5))
-                .overlay { ProgressView() }
         case .success(let image):
             // 成功
             image.resizable().scaledToFill()
-        case .failure:
-            // 失敗
-            Rectangle()
-                .fill(Color(.systemGray4))
-                .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
-        @unknown default:
-            EmptyView()
+        default:
+            // 読み込み中・失敗
+            Color.gray.opacity(0.3)
+                .overlay { ProgressView() }
         }
     }
 ```
-▶ ここで確認: 存在しないURLを渡すと `case .failure` のフォールバックが表示されること
+▶ ここで確認: 存在しないURLを渡すとプレースホルダーが表示されること
+▶ 理解: `case .success` だけ個別に処理し、他は `default` にまとめるのがシンプル
 
 ### 3-3: いいね数のオーバーレイを追加し、全体を組み立てる
 ```swift
+import SwiftUI
+
 struct PhotoGridCell: View {
     let photo: Photo
-    @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            // AsyncImageからURLから非同期で画像を読み込む
-            AsyncImage(url: photo.imageURL) { phase in
-                switch phase {
-                case .empty:
-                    // 読み込み中
-                    Rectangle()
-                        .fill(Color(.systemGray5))
-                        .overlay {
-                            ProgressView()
-                        }
-                case .success(let image):
-                    // 読み込み成功
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .failure:
-                    // 読み込み失敗
-                    Rectangle()
-                        .fill(Color(.systemGray4))
-                        .overlay {
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
-                        }
-                @unknown default:
-                    EmptyView()
-                }
+        AsyncImage(url: photo.imageURL) { phase in
+            switch phase {
+            case .success(let image):
+                // 読み込み成功
+                image
+                    .resizable()
+                    .aspectRatio(1, contentMode: .fill)
+                    .clipped()
+            default:
+                // 読み込み中・失敗
+                Color.gray.opacity(0.3)
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay { ProgressView() }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-
-            // いいね数オーバーレイ
+        }
+        // いいね数オーバーレイ
+        .overlay(alignment: .bottomLeading) {
             HStack(spacing: 4) {
                 Image(systemName: "heart.fill")
                     .font(.footnote)
-                Text(viewModel.formattedLikes(photo.likes))
+                Text(photo.formattedLikes)
                     .font(.footnote.bold())
             }
             .foregroundStyle(.white)
@@ -236,19 +211,18 @@ struct PhotoGridCell: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .padding(6)
         }
-        .aspectRatio(1, contentMode: .fit)
     }
 }
 
 #Preview {
     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())]) {
-        PhotoGridCell(photo: Photo.samples[0], viewModel: PhotoViewModel())
-        PhotoGridCell(photo: Photo.samples[1], viewModel: PhotoViewModel())
+        PhotoGridCell(photo: Photo.samples[0])
+        PhotoGridCell(photo: Photo.samples[1])
     }
 }
 ```
-▶ 理解: いいね数は `Text("\(photo.likes)")` ではなく `viewModel.formattedLikes(photo.likes)` を使う。これでセルは数値の整形方法を知らなくてよくなる
-▶ 理解: 固定の `frame(height: 150)` と `aspectRatio(1, contentMode: .fit)` を両方指定すると競合してレイアウトが不安定になる。`frame(maxWidth: .infinity, maxHeight: .infinity)` + 親の `aspectRatio` の組み合わせにすることで正方形セルが安定する
+▶ 理解: いいねは `photo.formattedLikes` で取得する（Step 1-4 の computed property）
+▶ 理解: `AsyncImage` に `.overlay(alignment:)` を直接チェーンすることで、`ZStack` を使わずにシンプルな構造を保てる。`aspectRatio` は各 phase の View に付けることでサイズが確定する
 
 ---
 
@@ -274,7 +248,7 @@ struct PhotoGalleryView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 2) {
                     ForEach(viewModel.filteredPhotos) { photo in
-                        PhotoGridCell(photo: photo, viewModel: viewModel)
+                        PhotoGridCell(photo: photo)
                     }
                 }
             }
@@ -286,7 +260,6 @@ struct PhotoGalleryView: View {
 #Preview { PhotoGalleryView() }
 ```
 ▶ ここで確認: 2列グリッドで写真が並ぶこと
-▶ 理解: `PhotoGridCell` は `viewModel` を必須パラメータとして受け取るようになったので、呼び出し側でも `viewModel:` を渡す
 
 ### 4-2: 列数を3列に変えて Lazy の意味を体感する
 ```swift
@@ -341,7 +314,7 @@ struct CategoryChip: View {
 ```
 ▶ 理解: 再利用可能なViewは `Views/Components/` に分離する（フォルダ構成のルール）
 
-### 5-2: PhotoGalleryView の ScrollView の上にフィルターを追加
+### 5-2: PhotoGalleryView にフィルターとグリッドを組み合わせる
 ```swift
     var body: some View {
         NavigationStack {
@@ -363,7 +336,13 @@ struct CategoryChip: View {
                 }
 
                 // ScrollView + LazyVGrid でフォトグリッド
-                ScrollView { ... }
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 2) {
+                        ForEach(viewModel.filteredPhotos) { photo in
+                            PhotoGridCell(photo: photo)
+                        }
+                    }
+                }
             }
             .navigationTitle("フォトギャラリー")
             .navigationBarTitleDisplayMode(.inline)
@@ -378,13 +357,12 @@ struct CategoryChip: View {
 ## Step 6 — 詳細画面と NavigationLink を繋ぐ
 **ファイル:** `Views/PhotoDetailView.swift` を新規作成、その後 `PhotoGalleryView.swift` を編集
 
-### 6-1: 詳細画面（大きな AsyncImage + タイトル/カテゴリ）
+### 6-1: 詳細画面（大きな AsyncImage + タイトル/カテゴリ/いいね数）
 ```swift
 import SwiftUI
 
 struct PhotoDetailView: View {
     let photo: Photo
-    @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
         ScrollView {
@@ -392,46 +370,17 @@ struct PhotoDetailView: View {
                 // 大きな画像表示
                 AsyncImage(url: photo.imageURL) { phase in
                     switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color(.systemGray5))
-                            .frame(height: 300)
-                            .overlay { ProgressView() }
                     case .success(let image):
                         image
                             .resizable()
                             .scaledToFit()
-                    case .failure:
-                        Rectangle()
-                            .fill(Color(.systemGray4))
+                    default:
+                        Color.gray.opacity(0.3)
                             .frame(height: 300)
-                            .overlay {
-                                Image(systemName: "photo")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.secondary)
-                            }
-                    @unknown default:
-                        EmptyView()
+                            .overlay { ProgressView() }
                     }
                 }
 
-                VStack(alignment: .leading) {
-                    Text(photo.title).font(.title2.bold())
-                    Label(photo.category.rawValue, systemImage: "tag.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal)
-            }
-        }
-        .navigationTitle(photo.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-```
-▶ 理解: `PhotoDetailView` も `PhotoGridCell` と同様に `viewModel` を受け取る。これは次のサブステップで `formattedLikes(_:)` を使うため
-
-### 6-2: いいね数と撮影者の表示を追加する
-```swift
                 VStack(alignment: .leading, spacing: 12) {
                     Text(photo.title)
                         .font(.title2.bold())
@@ -441,7 +390,7 @@ struct PhotoDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Label(viewModel.formattedLikes(photo.likes), systemImage: "heart.fill")
+                        Label(photo.formattedLikes, systemImage: "heart.fill")
                             .font(.subheadline)
                             .foregroundStyle(.pink)
                     }
@@ -450,28 +399,40 @@ struct PhotoDetailView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal)
+            }
+        }
+        .navigationTitle(photo.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        PhotoDetailView(photo: Photo.samples[0])
+    }
+}
 ```
 ▶ ここで確認: カテゴリと反対側にいいね数（K表記対応）が並び、その下に「撮影: ○○」が表示されること
-▶ 理解: いいねは一覧画面と同じ `viewModel.formattedLikes(_:)` を再利用する。撮影者表示のために `Photo` に `author` プロパティを追加してある（Step 1）
+▶ 理解: `photo.formattedLikes` を使う（Step 1-4）。詳細画面も `Photo` データだけを受け取ればよいので `viewModel` は不要
 
-### 6-3: LazyVGrid の各セルを NavigationLink でラップ
+### 6-2: LazyVGrid の各セルを NavigationLink でラップ
 ```swift
                 LazyVGrid(columns: columns, spacing: 2) {
                     ForEach(viewModel.filteredPhotos) { photo in
-                        NavigationLink(destination: PhotoDetailView(photo: photo, viewModel: viewModel)) {
-                            PhotoGridCell(photo: photo, viewModel: viewModel)
+                        NavigationLink(destination: PhotoDetailView(photo: photo)) {
+                            PhotoGridCell(photo: photo)
                         }
                     }
                 }
 ```
 ▶ ここで確認: セルタップで詳細画面に遷移し、大きな画像・いいね数・撮影者が表示されること
-▶ 理解: `PhotoDetailView` も `viewModel:` を渡すように呼び出し側を更新する。渡し忘れるとコンパイルエラーになるので注意
 
 ---
 
 ## 完成チェックリスト
 - [ ] 2列グリッドで写真が表示される
-- [ ] AsyncImage の読み込み中・成功・失敗の3状態が確認できた
+- [ ] AsyncImage の読み込み中・成功の2状態が確認できた
 - [ ] カテゴリチップで絞り込みができる（`PhotoCategory.matches(_:)` 経由）
 - [ ] タップで詳細画面へ遷移し、いいね数・撮影者が表示される
 - [ ] `GridItem(.flexible)` / `.fixed` / `.adaptive` の違いを試した

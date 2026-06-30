@@ -32,8 +32,8 @@ struct PhotoGalleryView: View {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 2) {
                         ForEach(viewModel.filteredPhotos) { photo in
-                            NavigationLink(destination: PhotoDetailView(photo: photo, viewModel: viewModel)) {
-                                PhotoGridCell(photo: photo, viewModel: viewModel)
+                            NavigationLink(destination: PhotoDetailView(photo: photo)) {
+                                PhotoGridCell(photo: photo)
                             }
                         }
                     }

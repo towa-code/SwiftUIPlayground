@@ -52,6 +52,12 @@ enum PhotoCategory: String, CaseIterable, Identifiable {
 }
 
 extension Photo {
+    var formattedLikes: String {
+        likes >= 1000 ? String(format: "%.1fK", Double(likes) / 1000.0) : "\(likes)"
+    }
+}
+
+extension Photo {
     // Picsum Photos API を使ったサンプルデータ（実際のURLから画像取得）
     static let samples: [Photo] = [
         Photo(title: "山の夕暮れ", category: .nature, imageURLString: "https://picsum.photos/seed/mtn1/400/400", likes: 234, author: "Towa"),

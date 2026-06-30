@@ -2,7 +2,6 @@ import SwiftUI
 
 struct PhotoDetailView: View {
     let photo: Photo
-    @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
         ScrollView {
@@ -10,26 +9,14 @@ struct PhotoDetailView: View {
                 // 大きな画像表示
                 AsyncImage(url: photo.imageURL) { phase in
                     switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color(.systemGray5))
-                            .frame(height: 300)
-                            .overlay { ProgressView() }
                     case .success(let image):
                         image
                             .resizable()
                             .scaledToFit()
-                    case .failure:
-                        Rectangle()
-                            .fill(Color(.systemGray4))
+                    default:
+                        Color.gray.opacity(0.3)
                             .frame(height: 300)
-                            .overlay {
-                                Image(systemName: "photo")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.secondary)
-                            }
-                    @unknown default:
-                        EmptyView()
+                            .overlay { ProgressView() }
                     }
                 }
 
@@ -42,7 +29,7 @@ struct PhotoDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Label(viewModel.formattedLikes(photo.likes), systemImage: "heart.fill")
+                        Label(photo.formattedLikes, systemImage: "heart.fill")
                             .font(.subheadline)
                             .foregroundStyle(.pink)
                     }
@@ -61,6 +48,6 @@ struct PhotoDetailView: View {
 
 #Preview {
     NavigationStack {
-        PhotoDetailView(photo: Photo.samples[0], viewModel: PhotoViewModel())
+        PhotoDetailView(photo: Photo.samples[0])
     }
 }

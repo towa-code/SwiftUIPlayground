@@ -63,13 +63,15 @@ GridItem(.adaptive(minimum: 80)) // 最小幅に合わせて自動列数
 ```swift
 AsyncImage(url: URL(string: "https://...")) { phase in
     switch phase {
-    case .empty:     ProgressView()          // 読み込み中
-    case .success(let image): image.resizable()  // 成功
-    case .failure:   Image(systemName: "photo")  // 失敗
-    @unknown default: EmptyView()
+    case .success(let image):
+        image.resizable()          // 成功
+    default:
+        Color.gray.opacity(0.3)    // 読み込み中・失敗
+            .overlay { ProgressView() }
     }
 }
 ```
+`case .success` だけ個別に処理し、それ以外は `default` にまとめるのがシンプルで安全。
 
 ## 発展課題
 - ピンチジェスチャーでグリッド列数の変更
